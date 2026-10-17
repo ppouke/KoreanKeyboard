@@ -103,7 +103,6 @@ main :: proc() {
 		} else if rl.IsMouseButtonPressed(.LEFT) &&
 		   rl.CheckCollisionPointRec(mouse_pos, left_corner_rect) {
 			resize_anchor_point = rl.GetWindowPosition() + rl.Vector2{f32(WINDOW_W), f32(WINDOW_H)}
-			fmt.println(rl.GetWindowPosition())
 			resize_mouse_offset = rl.GetMousePosition()
 			is_resizing = true
 		}
