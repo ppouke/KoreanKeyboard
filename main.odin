@@ -19,11 +19,11 @@ WINDOW_W: i32
 
 main :: proc() {
 
-	min_size: [2]i32 = {100, 100}
 	WINDOW_W = 700
 	WINDOW_H = 225
 
 	height_ratio : f32 = 225.0 / 700.0
+	min_size: [2]i32 = {500, i32(500.0*height_ratio)}
 	rl.SetConfigFlags(
 		{.WINDOW_TRANSPARENT, .WINDOW_UNDECORATED, .WINDOW_TOPMOST, .WINDOW_RESIZABLE},
 	)
@@ -90,9 +90,9 @@ main :: proc() {
 		mouse_pos := rl.GetMousePosition()
 
 		// --- Window dragging (top bar) ---
-		top_bar_rect := rl.Rectangle{15, 0, f32(WINDOW_W), 15}
+		top_bar_rect := rl.Rectangle{15, 0, f32(WINDOW_W - 15), 15}
 		left_corner_rect := rl.Rectangle{0, 0, 15, 15}
-		close_rect := rl.Rectangle{f32(WINDOW_W) - 30, 0, 30, 15}
+		close_rect := rl.Rectangle{f32(WINDOW_W) - 15, 0, 15, 15}
 
 		if rl.IsMouseButtonPressed(.LEFT) && rl.CheckCollisionPointRec(mouse_pos, close_rect) {
 			g.quit = true
@@ -102,7 +102,8 @@ main :: proc() {
 			drag_offset = mouse_pos
 		} else if rl.IsMouseButtonPressed(.LEFT) &&
 		   rl.CheckCollisionPointRec(mouse_pos, left_corner_rect) {
-			resize_anchor_point = rl.GetWindowPosition() + rl.Vector2{f32(WINDOW_H), f32(WINDOW_H)}
+			resize_anchor_point = rl.GetWindowPosition() + rl.Vector2{f32(WINDOW_W), f32(WINDOW_H)}
+			fmt.println(rl.GetWindowPosition())
 			resize_mouse_offset = rl.GetMousePosition()
 			is_resizing = true
 		}
@@ -121,21 +122,31 @@ main :: proc() {
 			if rl.IsMouseButtonDown(.LEFT) {
 
 				global_mouse_pos := mouse_pos + rl.GetWindowPosition()
+
 				size_x := i32(resize_anchor_point.x - global_mouse_pos.x + resize_mouse_offset.x)
-				size_y := i32((resize_anchor_point.x - global_mouse_pos.x + resize_mouse_offset.x))
-				
-				WINDOW_W = max(min_size.x, size_x)
-				WINDOW_H = max(min_size.y, size_y)
+				size_y := i32((resize_anchor_point.y - global_mouse_pos.y + resize_mouse_offset.y))
 
-				rl.SetWindowSize(WINDOW_W, WINDOW_H)
-				btn_w = button_ratio * f32(WINDOW_W)
-				btn_h = button_ratio * f32(WINDOW_W)
-				gap= gap_ratio * f32(WINDOW_W)
-				start = start_ratio * f32(WINDOW_W)
-				reset_key_positions(start, start, btn_w, btn_h, gap, &keys)
+				size_x = max(min_size.x, size_x)
+				size_y = max(min_size.y, size_y)
 
+				ratio := f32(size_y)/f32(size_x)
+				if ratio > height_ratio { // y is bigger than x
+						size_y = i32(f32(size_x) * height_ratio)
+				} else if ratio < height_ratio {
+						size_x = i32(f32(size_y) / height_ratio)
+				}
+
+				WINDOW_W = size_x
+				WINDOW_H = size_y
 
 				if WINDOW_W > min_size.x && WINDOW_H > min_size.y {
+					rl.SetWindowSize(WINDOW_W, WINDOW_H)
+					btn_w = button_ratio * f32(WINDOW_W)
+					btn_h = button_ratio * f32(WINDOW_W)
+					gap= gap_ratio * f32(WINDOW_W)
+					start = start_ratio * f32(WINDOW_W)
+					reset_key_positions(start, start, btn_w, btn_h, gap, &keys)
+
 					new_pos_x := i32(resize_anchor_point.x) - WINDOW_W
 					new_pos_y := i32(resize_anchor_point.y) - WINDOW_H
 
@@ -156,8 +167,8 @@ main :: proc() {
 
 		rl.DrawRectangleRounded(top_bar_rect, 0.1, 4, rl.Color{40, 40, 40, 200})
 		rl.DrawRectangleRounded(left_corner_rect, 0.1, 4, rl.Color{20, 20, 20, 200})
+		rl.DrawRectangleRounded(close_rect, 0.1, 4, rl.Color{255, 0, 0, 200})
 		rl.DrawTextEx(font, "한", {6, -3}, 18, 1, rl.WHITE)
-		rl.DrawTextEx(font, "X", {f32(WINDOW_W) - 20, -3}, 18, 1, rl.Color{230, 100, 100, 200})
 
 		for k in keys {
 			jamo := jamo_for_letter(k.letter, shift)
